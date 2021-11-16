@@ -2,7 +2,7 @@ import sys
 import psycopg2.extras
 
 EXIT = 5
-sys.path.insert(0, "venv/queries")
+sys.path.insert(0, "./queries")
 from select_query import selectQuery
 
 
