@@ -9,6 +9,7 @@ def getINC(loinc):
     return select_query
 
 def find_latest_date_without_time(first_name, last_name, wanted_date, prespective_date, loinc):
+
     select_query = " SELECT first_name, value " \
                    " FROM PATIENTS " \
                    " WHERE first_name = %s " \
@@ -23,6 +24,7 @@ def find_latest_date_without_time(first_name, last_name, wanted_date, prespectiv
 
 
 def find_latest_date_with_time(first_name, last_name, date, prespective_date, loinc):
+
     select_query = " SELECT first_name, value " \
                    " FROM PATIENTS " \
                    " WHERE first_name = %s" \
@@ -35,8 +37,9 @@ def find_latest_date_with_time(first_name, last_name, date, prespective_date, lo
 
     return select_query
 
-
 def selectQuery(cursor, cursor_inc):
+
+    records = []
 
     [first_name, last_name] = input("Enter patient full name\n").split()
     wanted_date = input("Enter wanted date (year/mm/dd  hh/mm/ss)\n").split()
@@ -61,7 +64,14 @@ def selectQuery(cursor, cursor_inc):
         date = wanted_date[0] + " " + wanted_date[1]
         select_query = find_latest_date_with_time(first_name, last_name, date, prespective_date, loinc)
         cursor.execute(select_query, (first_name, loinc, first_name, date, prespective_date,))
+        records = cursor.fetchall()
+
+        # Query didnt give any result
+        if not records:
+             print(f"{first_name} didnt take a {long_common_name.lowet()} examination at {date}")
+             return
 
 
-    value = cursor.fetchone()['value']
-    print(f"{first_name} {long_common_name} is: {value}")
+    # Get the value of the examination
+    value = records[0][1]
+    print(f"{first_name} {long_common_name.lower()} is: {value}")

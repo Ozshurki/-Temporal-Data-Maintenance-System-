@@ -19,7 +19,7 @@ chooseAction = "Please enter your query:\n" \
                "4. Delete\n" \
                "5. Exit\n" \
  \
-    # Patients DB
+# Patients DB
 hostname = 'localhost'
 database = 'postgres'
 username = 'postgres'
