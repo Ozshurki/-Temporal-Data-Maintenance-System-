@@ -1,34 +1,28 @@
 import psycopg2.extras
 import datetime
+from loinc_to_lcn import get_inc
 
 
-def getINC(loinc):
-    select_query = " SELECT lcn " \
-                   " FROM LOINC_TO_LCN " \
-                   " WHERE loinc_num = %s"
-
-    return select_query
-
-def find_latest_date(first_name, last_name, date, prespective_date, loinc, is_with_time):
-    select_query = " SELECT first_name, value " \
+def find_latest_date(is_with_time):
+    query = " SELECT first_name, value " \
                    " FROM PATIENTS " \
                    " WHERE first_name = %s" \
                    " AND loinc_num = %s " \
                    " AND valid_start_time IN (SELECT MAX(valid_start_time) " \
                    " FROM PATIENTS " \
                    " WHERE first_name = %s AND " \
-                   " valid_start_time{dateSymbol} = %s " \
-                   " AND transaction_time::DATE < %s) ".format(dateSymbol="::DATE" if is_with_time else "")
+                   " valid_start_time{date_symbol} = %s " \
+                   " AND transaction_time::DATE < %s) ".format(date_symbol="::DATE" if is_with_time else "")
 
-    return select_query
+    return query
 
 
 def first_name_is_valid(first_name, cursor):
-    select_query = " SELECT first_name " \
+    query = " SELECT first_name " \
                    " FROM PATIENTS " \
                    " WHERE first_name = %s"
 
-    cursor.execute(select_query, (first_name,))
+    cursor.execute(query, (first_name,))
     records = cursor.fetchall()
 
     if not records:
@@ -36,31 +30,30 @@ def first_name_is_valid(first_name, cursor):
     return True
 
 
-def selectQuery(cursor, cursor_inc):
+def select_query(cursor, cursor_inc):
 
-    select_query = ""
-    records = []
-    is_with_time = False
-    date =""
+    [first_name, last_name] = input("Enter patient full name\n").strip().split()
+    wanted_date = input("Enter wanted date (year/mm/dd  hh/mm/ss)\n").strip().split()
+    my_date = input("Enter your date\n").strip()
+    examination_num = input("Enter loinc\n").strip()
 
-    [first_name, last_name] = input("Enter patient full name\n").split()
-    wanted_date = input("Enter wanted date (year/mm/dd  hh/mm/ss)\n").split()
-    prespective_date = input("Enter your date\n")
-    loinc = input("Enter loinc\n")
-
-    # Valid if first_name exists
+    # Verify if first_name exists
     if not first_name_is_valid(first_name, cursor):
         print("No such name, please try again.")
         return
 
     # Use current time if not entered
-    if not prespective_date:
-        prespective_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    if not my_date:
+        my_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     # Get Long Common Name
-    lcn_query = getINC(loinc)
-    cursor_inc.execute(lcn_query, (loinc,))
+    lcn_query = get_inc()
+    cursor_inc.execute(lcn_query, (examination_num,))
     long_common_name = cursor_inc.fetchone()['lcn'].lower()
+
+    # Init variable
+    is_with_time = False
+    date = ""
 
     # Date is without time
     if len(wanted_date) == 1:
@@ -69,8 +62,8 @@ def selectQuery(cursor, cursor_inc):
     else:
         date = wanted_date[0] + " " + wanted_date[1]
 
-    select_query = find_latest_date(first_name, last_name, date, prespective_date, loinc, is_with_time)
-    cursor.execute(select_query, (first_name, loinc, first_name, date, prespective_date,))
+    query = find_latest_date(is_with_time)
+    cursor.execute(query, (first_name, examination_num, first_name, date, my_date,))
     records = cursor.fetchall()
 
     # Query didnt return any result
