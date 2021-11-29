@@ -1,9 +1,9 @@
 def date_exists(valid_date, cursor):
     query = ' SELECT valid_start_time' \
             ' FROM PATIENTS' \
-            ' WHERE valid_start_time = %s'
+            ' WHERE valid_start_time = %s '
 
-    cursor.execute(query, (valid_date,))
+    cursor.execute(query, (valid_date[0],))
     records = cursor.fetchall()
 
     if not records:

@@ -47,27 +47,26 @@ def delete_record(cursor, cursor_inc):
     if not delete_date:
         delete_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+    print(f"delete day is {delete_date}")
+
     if not date_exists(valid_date, cursor):
         print("No such date, please try again.")
         return
 
     without_time = False
+    date = ""
     if len(valid_date) == 1:
         without_time = True
+        date = valid_date[0]
+    else:
+        date = valid_date[0] + " " + valid_date[1]
 
     if without_time:
         query = find_latest_record()
     else:
         query = find_record()
 
-    cursor.execute(query, (delete_date, first_name, examination_num, first_name, examination_num, valid_date))
-    records = cursor.fetchall()
-
-    # Query didnt return any result
-    if not records:
-        print(f"{first_name} didnt take a {long_common_name} examination at {delete_date}")
-        return
+    cursor.execute(query, (delete_date, first_name, examination_num, first_name, examination_num, date))
 
     # Get the value of the examination
-    value = records[0][1]
-    print(f"{first_name} {long_common_name} at {delete_date} is deleted\n")
+    print(f"{first_name} {last_name} {long_common_name} at {date} is deleted\n")
