@@ -23,8 +23,9 @@ def find_record():
     query = " UPDATE PATIENTS" \
             " SET deleted_date = %s" \
             " WHERE first_name = %s AND" \
-            " loinc_num = %s" \
+            " loinc_num = %s AND" \
             " valid_start_time = %s"
+
     return query
 
 
@@ -47,8 +48,6 @@ def delete_record(cursor, cursor_inc):
     if not delete_date:
         delete_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    print(f"delete day is {delete_date}")
-
     if not date_exists(valid_date, cursor):
         print("No such date, please try again.")
         return
@@ -63,10 +62,10 @@ def delete_record(cursor, cursor_inc):
 
     if without_time:
         query = find_latest_record()
+        cursor.execute(query, (delete_date, first_name, examination_num, first_name, examination_num, date))
     else:
         query = find_record()
-
-    cursor.execute(query, (delete_date, first_name, examination_num, first_name, examination_num, date))
+        cursor.execute(query, (delete_date, first_name, examination_num, date))
 
     # Get the value of the examination
     print(f"{first_name} {last_name} {long_common_name} at {date} is deleted\n")

@@ -1,6 +1,7 @@
 import psycopg2.extras
 import datetime
 from loinc_to_lcn import get_inc
+from validators.date_validator import date_exists
 
 
 def find_latest_date(is_with_time):
@@ -10,8 +11,8 @@ def find_latest_date(is_with_time):
                    " AND loinc_num = %s " \
                    " AND valid_start_time IN (SELECT MAX(valid_start_time) " \
                    " FROM PATIENTS " \
-                   " WHERE first_name = %s AND " \
-                   " valid_start_time{date_symbol} = %s " \
+                   " WHERE first_name = %s " \
+                   " AND valid_start_time{date_symbol} = %s " \
                    " AND transaction_time::DATE < %s) ".format(date_symbol="::DATE" if is_with_time else "")
 
     return query
@@ -33,7 +34,7 @@ def first_name_is_valid(first_name, cursor):
 def select_query(cursor, cursor_inc):
 
     [first_name, last_name] = input("Enter patient full name\n").strip().split()
-    wanted_date = input("Enter wanted date (year/mm/dd  hh/mm/ss)\n").strip().split()
+    valid_date = input("Enter wanted date (year/mm/dd  hh/mm/ss)\n").strip().split()
     my_date = input("Enter your date\n").strip()
     examination_num = input("Enter loinc\n").strip()
 
@@ -46,6 +47,10 @@ def select_query(cursor, cursor_inc):
     if not my_date:
         my_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+    if not date_exists(valid_date, cursor):
+        print("No such date, please try again.")
+        return
+
     # Get Long Common Name
     lcn_query = get_inc()
     cursor_inc.execute(lcn_query, (examination_num,))
@@ -56,11 +61,11 @@ def select_query(cursor, cursor_inc):
     date = ""
 
     # Date is without time
-    if len(wanted_date) == 1:
+    if len(valid_date) == 1:
         is_with_time = True
-        date = wanted_date[0]
+        date = valid_date[0]
     else:
-        date = wanted_date[0] + " " + wanted_date[1]
+        date = valid_date[0] + " " + valid_date[1]
 
     query = find_latest_date(is_with_time)
     cursor.execute(query, (first_name, examination_num, first_name, date, my_date,))
