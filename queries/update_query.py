@@ -38,7 +38,7 @@ def update_latest_record():
 def update_query(patients_cursor, inc_cursor, last_modified_cursor):
     [first_name, last_name] = input("Enter patient full name\n").strip().split()
     valid_date = input("Enter valid date you wish to delete (year/mm/dd  hh/mm/ss)\n").strip().split()
-    modified_date = input("Enter modified date (year/mm/dd  hh/mm/ss)\n").strip().split()
+    modified_date = input("Enter your date (year/mm/dd  hh/mm/ss)\n").strip()
     loinc_num = input("Enter loinc\n").strip()
     new_value = input("Enter a new value\n").strip()
 
@@ -57,7 +57,7 @@ def update_query(patients_cursor, inc_cursor, last_modified_cursor):
         modified_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     if not date_exists(valid_date, patients_cursor):
-        print("No such date, please try again.")
+        print(f"No such date {valid_date} in the database, please try again.")
         return
 
     if len(valid_date) == 1:

@@ -71,7 +71,7 @@ def select_query(cursor, cursor_inc):
     cursor.execute(query, (first_name, examination_num, first_name, date, my_date,))
     records = cursor.fetchall()
 
-    # Query didnt return any result
+    # Query didnt returned any result
     if not records:
         print(f"{first_name} didnt take a {long_common_name} examination at {date}")
         return
