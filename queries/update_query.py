@@ -5,7 +5,9 @@ from queries.select_query import get_inc
 
 
 def insert_new_record():
-    query = "INSERT INTO last_modified (first_name, last_name, loinc_num, valid_date, value, modified_date)"
+    query = " INSERT INTO last_modified (first_name, last_name, loinc_num, valid_date, value, modified_date)" \
+            " VALUES (%s, %s, %s, %s, %s, %s) " \
+
     return query
 
 
@@ -28,12 +30,12 @@ def update_latest_record():
             " AND transaction_time IN (SELECT MAX(transaction_time)" \
             " FROM PATIENTS " \
             " WHERE first_name = %s " \
-            " AND valid_start_time = %s)"
+            " AND valid_start_time::DATE = %s)"
 
     return query
 
 
-def update_record(patients_cursor, inc_cursor, last_modified_cursor):
+def update_query(patients_cursor, inc_cursor, last_modified_cursor):
     [first_name, last_name] = input("Enter patient full name\n").strip().split()
     valid_date = input("Enter valid date you wish to delete (year/mm/dd  hh/mm/ss)\n").strip().split()
     modified_date = input("Enter modified date (year/mm/dd  hh/mm/ss)\n").strip().split()
@@ -61,14 +63,14 @@ def update_record(patients_cursor, inc_cursor, last_modified_cursor):
     if len(valid_date) == 1:
         query = update_latest_record()
         valid_date = valid_date[0]
-        patients_cursor.execute(query, (modified_date, first_name, loinc_num, valid_date, first_name, valid_date))
+        patients_cursor.execute(query, (modified_date, first_name, loinc_num, valid_date, first_name, valid_date,))
     else:
         query = update_record()
         valid_date = valid_date[0] + " " + valid_date[1]
-        patients_cursor.execute(query, (modified_date, first_name, loinc_num, valid_date))
+        patients_cursor.execute(query, (modified_date, first_name, loinc_num, valid_date,))
 
     print("Record has been update")
     # Insert new record to modified database
-    insert_new_record()
+    query = insert_new_record()
     insert_values = (first_name, last_name, loinc_num, valid_date, new_value, modified_date)
     last_modified_cursor.execute(query, insert_values)

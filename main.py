@@ -4,7 +4,7 @@ sys.path.append("C:\\Users\\shurk\\PycharmProjects\\AI_Project\queries")
 sys.path.append("C:\\Users\\shurk\\PycharmProjects\\AI_Project\\validators")
 from queries.select_query import select_query
 from queries.delete_query import delete_record
-from queries.update_query import update_record
+from queries.update_query import update_query
 
 EXIT = 5
 
@@ -61,7 +61,7 @@ def main():
     input_dict = {
         1: select_query,
         2: input_invalid,
-        3: update_record,
+        3: update_query,
         4: delete_record
     }
 
