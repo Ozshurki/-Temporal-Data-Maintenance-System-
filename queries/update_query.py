@@ -12,27 +12,43 @@ def insert_new_record():
 
 
 def update_record():
-    query = " UPDATE PATIENTS " \
-            " SET last_modified = %s " \
-            " WHERE first_name = %s AND" \
-            " loinc_num = %s AND " \
-            " valid_start_time = %s " \
+    update = " UPDATE PATIENTS " \
+                   " SET last_modified = %s " \
+                   " WHERE first_name = %s AND" \
+                   " loinc_num = %s AND " \
+                   " valid_start_time = %s "
 
-    return query
+    select = " SELECT * " \
+             " FROM PATIENTS " \
+             " WHERE first_name = %s AND" \
+             " loinc_num = %s AND " \
+             " valid_start_time = %s "
+
+    return [update, select]
 
 
 def update_latest_record():
-    query = " UPDATE PATIENTS" \
-            " SET last_modified = %s" \
-            " WHERE first_name = %s" \
-            " AND loinc_num = %s" \
-            " AND valid_start_time::DATE = %s " \
-            " AND transaction_time IN (SELECT MAX(transaction_time)" \
-            " FROM PATIENTS " \
-            " WHERE first_name = %s " \
-            " AND valid_start_time::DATE = %s)"
+    update = " UPDATE PATIENTS" \
+             " SET last_modified = %s" \
+             " WHERE first_name = %s" \
+             " AND loinc_num = %s" \
+             " AND valid_start_time::DATE = %s " \
+             " AND transaction_time IN (SELECT MAX(transaction_time)" \
+             " FROM PATIENTS " \
+             " WHERE first_name = %s " \
+             " AND valid_start_time::DATE = %s)"
 
-    return query
+    select = " SELECT * " \
+             " FROM PATIENTS" \
+             " WHERE first_name = %s" \
+             " AND loinc_num = %s" \
+             " AND valid_start_time::DATE = %s " \
+             " AND transaction_time IN (SELECT MAX(transaction_time)" \
+             " FROM PATIENTS " \
+             " WHERE first_name = %s " \
+             " AND valid_start_time::DATE = %s)"
+
+    return [update, select]
 
 
 def update_query(patients_cursor, inc_cursor, last_modified_cursor):
@@ -48,9 +64,7 @@ def update_query(patients_cursor, inc_cursor, last_modified_cursor):
         return
 
     # Get Long Common Name
-    lcn_query = get_inc()
-    inc_cursor.execute(lcn_query, (loinc_num,))
-    long_common_name = inc_cursor.fetchone()['lcn'].lower()
+    long_common_name = get_inc(inc_cursor, loinc_num)
 
     # If user didnt enter date, use current date
     if not modified_date:
@@ -61,13 +75,20 @@ def update_query(patients_cursor, inc_cursor, last_modified_cursor):
         return
 
     if len(valid_date) == 1:
-        query = update_latest_record()
+        [update_query, select_query] = update_latest_record()
         valid_date = valid_date[0]
-        patients_cursor.execute(query, (modified_date, first_name, loinc_num, valid_date, first_name, valid_date,))
+        patients_cursor.execute(update_query, (modified_date, first_name, loinc_num, valid_date, first_name, valid_date,))
+        patients_cursor.execute(select_query, (modified_date, first_name, loinc_num, valid_date, first_name, valid_date,))
     else:
-        query = update_record()
+        [update_query, select_query] = update_record()
         valid_date = valid_date[0] + " " + valid_date[1]
-        patients_cursor.execute(query, (modified_date, first_name, loinc_num, valid_date,))
+        patients_cursor.execute(update_query, (modified_date, first_name, loinc_num, valid_date,))
+        patients_cursor.execute(select_query, (modified_date, first_name, loinc_num, valid_date,))
+
+    records = patients_cursor.fetchall()
+    print("The records that has been updates are:\n")
+    for record in records:
+        print(f"{first_name} {last_name} loinc_num: {record['loinc_num']} ({long_common_name}) at {valid_date}")
 
     print("Record has been update")
     # Insert new record to modified database

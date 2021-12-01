@@ -5,7 +5,7 @@ from validators.date_validator import date_exists
 from queries.select_query import get_inc
 
 
-def check_last_modified_database(last_modified_cursor, first_name, loinc_num, valid_date, start_date, end_date):
+def check_last_modified_database(last_modified_cursor, first_name,last_name, loinc_num, valid_date, start_date, end_date, long_common_name):
     query = " SELECT * " \
             " FROM last_modified " \
             " WHERE first_name = %s " \
@@ -17,7 +17,7 @@ def check_last_modified_database(last_modified_cursor, first_name, loinc_num, va
     last_modified_cursor.execute(query, (first_name, loinc_num, valid_date, start_date, end_date))
     records = last_modified_cursor.fetchall()
     for record in records:
-        print(f"{record}")
+        print(f"{first_name} {last_name} loinc_num: {record['loinc_num']} ({long_common_name}) with value: {record['value']} last modified at {record['modified_date']}")
 
 
 def find_specific_exams():
@@ -78,13 +78,15 @@ def history_query(patients_cursor, inc_cursor, last_modified_cursor):
         print(f"{first_name} didnt take a examination at {valid_date}")
         return
 
+    print(f"\nThe records that in the range of {start_date} - {end_date} are:\n")
     # For each record
     for record in records:
+        long_common_name = get_inc(inc_cursor, record['loinc_num'])
 
         # If the record has been update
         if record['last_modified']:
-            check_last_modified_database(last_modified_cursor, first_name, record['loinc_num'], valid_date, start_date, end_date)
+            check_last_modified_database(last_modified_cursor, first_name, last_name, record['loinc_num'], valid_date, start_date,end_date, long_common_name)
         else:
-            print(f"{record}")
+            print(f"{first_name} {last_name} loinc_num: {record['loinc_num']} ({long_common_name}) with value: {record['value']} last modified at {record['transaction_time']}")
 
 

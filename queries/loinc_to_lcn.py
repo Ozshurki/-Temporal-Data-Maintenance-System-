@@ -1,12 +1,8 @@
-import sys
-from os.path import dirname, abspath
-d = dirname(dirname(abspath(__file__)))
-sys.path.append(d)
-
-
-def get_inc():
+def get_inc(inc_cursor, loinc_num):
     query = " SELECT lcn " \
             " FROM LOINC_TO_LCN " \
             " WHERE loinc_num = %s"
 
-    return query
+    inc_cursor.execute(query, (loinc_num,))
+    long_common_name = inc_cursor.fetchone()['lcn'].lower()
+    return long_common_name

@@ -2,44 +2,46 @@ import psycopg2.extras
 import datetime
 from loinc_to_lcn import get_inc
 from validators.date_validator import date_exists
+from validators.name_validator import first_name_is_valid
 
 
-def find_latest_date(is_with_time):
-    query = " SELECT first_name, value " \
-                   " FROM PATIENTS " \
-                   " WHERE first_name = %s" \
-                   " AND loinc_num = %s " \
-                   " AND valid_start_time IN (SELECT MAX(valid_start_time) " \
-                   " FROM PATIENTS " \
-                   " WHERE first_name = %s " \
-                   " AND valid_start_time{date_symbol} = %s " \
-                   " AND transaction_time::DATE < %s) ".format(date_symbol="::DATE" if is_with_time else "")
+def get_last_modified(is_with_time):
+    query = " SELECT * " \
+            " FROM last_modified " \
+            " WHERE modified_date IN (SELECT MAX(modified_date) " \
+            " FROM last_modified " \
+            " WHERE first_name = %s AND " \
+            " valid_date{date_symbol} = %s AND " \
+            " loinc_num = %s AND " \
+            " modified_date < %s)".format(date_symbol="::DATE" if is_with_time else "")
 
     return query
 
 
-def first_name_is_valid(first_name, cursor):
-    query = " SELECT first_name " \
-                   " FROM PATIENTS " \
-                   " WHERE first_name = %s"
+def find_latest_date(is_with_time):
+    query = " SELECT * " \
+            " FROM PATIENTS " \
+            " WHERE first_name = %s" \
+            " AND loinc_num = %s " \
+            " AND valid_start_time{date_symbol} = %s AND " \
+            " transaction_time IN (SELECT MAX(transaction_time) " \
+            " FROM PATIENTS " \
+            " WHERE first_name = %s " \
+            " AND loinc_num = %s " \
+            " AND valid_start_time{date_symbol} = %s" \
+            " AND transaction_time < %s) ".format(date_symbol="::DATE" if is_with_time else "")
 
-    cursor.execute(query, (first_name,))
-    records = cursor.fetchall()
-
-    if not records:
-        return False
-    return True
+    return query
 
 
-def select_query(cursor, cursor_inc):
-
+def select_query(patients_cursor, inc_cursor, last_modified_cursor):
     [first_name, last_name] = input("Enter patient full name\n").strip().split()
-    valid_date = input("Enter wanted date (year/mm/dd  hh/mm/ss)\n").strip().split()
-    my_date = input("Enter your date\n").strip()
-    examination_num = input("Enter loinc\n").strip()
+    valid_date = input("Enter valid date (year/mm/dd  hh/mm/ss)\n").strip().split()
+    my_date = input("Enter your date\n")
+    loinc_num = input("Enter loinc number\n").strip()
 
     # Verify if first_name exists
-    if not first_name_is_valid(first_name, cursor):
+    if not first_name_is_valid(first_name, patients_cursor):
         print("No such name, please try again.")
         return
 
@@ -47,14 +49,12 @@ def select_query(cursor, cursor_inc):
     if not my_date:
         my_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    if not date_exists(valid_date, cursor):
+    if not date_exists(valid_date, patients_cursor):
         print("No such date, please try again.")
         return
 
     # Get Long Common Name
-    lcn_query = get_inc()
-    cursor_inc.execute(lcn_query, (examination_num,))
-    long_common_name = cursor_inc.fetchone()['lcn'].lower()
+    long_common_name = get_inc(inc_cursor, loinc_num)
 
     # Init variable
     is_with_time = False
@@ -68,14 +68,21 @@ def select_query(cursor, cursor_inc):
         date = valid_date[0] + " " + valid_date[1]
 
     query = find_latest_date(is_with_time)
-    cursor.execute(query, (first_name, examination_num, first_name, date, my_date,))
-    records = cursor.fetchall()
+    patients_cursor.execute(query, (first_name, loinc_num, date, first_name, loinc_num, date, my_date))
+    record = patients_cursor.fetchall()
 
     # Query didnt returned any result
-    if not records:
+    if not record:
         print(f"{first_name} didnt take a {long_common_name} examination at {date}")
         return
 
-    # Get the value of the examination
-    value = records[0][1]
-    print(f"{first_name} {long_common_name} is: {value}\n")
+    if record[0][8]:
+        last_modified_query = get_last_modified(is_with_time)
+        last_modified_cursor.execute(last_modified_query, (first_name, date, loinc_num, my_date))
+        last_modified_record = last_modified_cursor.fetchall()
+        value = last_modified_record[0][4]
+    else:
+        # Get the value of the examination
+        value = record[0][3]
+
+    print(f"{first_name} {last_name} {long_common_name} value is: {value}\n")
