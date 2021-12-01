@@ -23,8 +23,7 @@ def find_latest_date(is_with_time):
             " FROM PATIENTS " \
             " WHERE first_name = %s" \
             " AND loinc_num = %s " \
-            " AND valid_start_time{date_symbol} = %s AND " \
-            " transaction_time IN (SELECT MAX(transaction_time) " \
+            " AND valid_start_time IN (SELECT MAX(valid_start_time) " \
             " FROM PATIENTS " \
             " WHERE first_name = %s " \
             " AND loinc_num = %s " \
@@ -49,26 +48,26 @@ def select_query(patients_cursor, inc_cursor, last_modified_cursor):
     if not my_date:
         my_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    if not date_exists(valid_date, patients_cursor):
+    # Init variable
+    valid_date_with_time = False
+    date = ""
+
+    # Valid_date without time
+    if len(valid_date) == 1:
+        valid_date_with_time = True
+        date = valid_date[0]
+    else:
+        date = valid_date[0] + " " + valid_date[1]
+
+    if not date_exists(date, patients_cursor, valid_date_with_time):
         print("No such date, please try again.")
         return
 
     # Get Long Common Name
     long_common_name = get_inc(inc_cursor, loinc_num)
 
-    # Init variable
-    is_with_time = False
-    date = ""
-
-    # Date is without time
-    if len(valid_date) == 1:
-        is_with_time = True
-        date = valid_date[0]
-    else:
-        date = valid_date[0] + " " + valid_date[1]
-
-    query = find_latest_date(is_with_time)
-    patients_cursor.execute(query, (first_name, loinc_num, date, first_name, loinc_num, date, my_date))
+    query = find_latest_date(valid_date_with_time)
+    patients_cursor.execute(query, (first_name, loinc_num, first_name, loinc_num, date, my_date))
     record = patients_cursor.fetchall()
 
     # Query didnt returned any result
@@ -77,7 +76,7 @@ def select_query(patients_cursor, inc_cursor, last_modified_cursor):
         return
 
     if record[0][8]:
-        last_modified_query = get_last_modified(is_with_time)
+        last_modified_query = get_last_modified(valid_date_with_time)
         last_modified_cursor.execute(last_modified_query, (first_name, date, loinc_num, my_date))
         last_modified_record = last_modified_cursor.fetchall()
         value = last_modified_record[0][4]

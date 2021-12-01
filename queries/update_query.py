@@ -55,7 +55,7 @@ def update_query(patients_cursor, inc_cursor, last_modified_cursor):
     [first_name, last_name] = input("Enter patient full name\n").strip().split()
     valid_date = input("Enter valid date you wish to delete (year/mm/dd  hh/mm/ss)\n").strip().split()
     modified_date = input("Enter your date (year/mm/dd  hh/mm/ss)\n").strip()
-    loinc_num = input("Enter loinc\n").strip()
+    loinc_num = input("Enter loinc number\n").strip()
     new_value = input("Enter a new value\n").strip()
 
     # Verify if first_name exists
