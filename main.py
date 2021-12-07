@@ -1,7 +1,8 @@
 import psycopg2.extras
 import sys
-sys.path.append("C:\\Users\\shurk\\PycharmProjects\\AI_Project\queries")
-sys.path.append("C:\\Users\\shurk\\PycharmProjects\\AI_Project\\validators")
+sys.path.append("queries")
+sys.path.append("validators")
+
 from queries.select_query import select_query
 from queries.delete_query import delete_record
 from queries.update_query import update_query
