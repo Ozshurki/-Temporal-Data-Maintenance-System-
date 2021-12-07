@@ -15,15 +15,18 @@ def input_invalid():
 
 
 def add_columns(cursor):
-    add_column = 'ALTER TABLE PATIENTS' \
-                 'ADD COLUMN last_modified timestamp without time zone ' \
-                 "ADD COLUMN deleted_time timestamp without time zone NOT NULL DEFAULT '3000-12-12 00:00:00' "
+    add_modified_column = " ALTER TABLE PATIENTS" \
+                          " ADD COLUMN last_modified TIMESTAMP without time zone NULL"
 
-    cursor.execute(add_column)
+    add_deleted_column = " ALTER TABLE PATIENTS" \
+                         " ADD COLUMN deleted_date TIMESTAMP without time zone NOT NULL DEFAULT '3000-12-12 00:00:00' "
+
+    cursor.execute(add_modified_column)
+    cursor.execute(add_deleted_column)
 
 
 connection = None
-chooseAction = "Please enter your query:\n" \
+chooseAction = "Please choose your action:\n" \
                "1. Select\n" \
                "2. Retrieving history\n" \
                "3. Update\n" \
