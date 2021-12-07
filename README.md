@@ -9,3 +9,5 @@ Notes:
 I imported the patients csv database with Pgadmin and also the loinc number to lcn csv database.
 
 I created a database for modified records and track the updated records.
+
+At the first run i add the columns modified_date and deleted_date
