@@ -28,7 +28,7 @@ def check_last_modified_database(last_modified_cursor, first_name, last_name, lo
     query = " SELECT * " \
             " FROM last_modified " \
             " WHERE first_name = %s " \
-            " AND loinc_num = %s  " \
+            " AND loinc_num = %s " \
             " AND valid_date::DATE = %s " \
             " AND modified_date > %s " \
             " AND modified_date < %s "
@@ -47,7 +47,8 @@ def find_all_exams(is_with_time):
             " AND valid_start_time{date_symbol} = %s " \
             " AND loinc_num = %s " \
             " AND transaction_time >= %s " \
-            " AND transaction_time <= %s ".format(date_symbol="::DATE" if is_with_time else "")
+            " AND transaction_time <= %s " \
+            " AND deleted_date IS NULL".format(date_symbol="::DATE" if is_with_time else "")
     return query
 
 

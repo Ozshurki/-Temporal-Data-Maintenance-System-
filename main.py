@@ -95,9 +95,10 @@ def main():
                                 # add_columns(cursor)
 
                                 user_input = select_action(chooseAction)
-                                # while user_input is not EXIT:
-                                input_dict.get(user_input, input_invalid)(
-                                    patients_cursor, inc_cursor, last_modified_cursor)
+                                while user_input is not EXIT:
+                                    input_dict.get(user_input, input_invalid)(
+                                        patients_cursor, inc_cursor, last_modified_cursor)
+                                    user_input = select_action(chooseAction)
     except Exception as error:
         print(error)
     finally:

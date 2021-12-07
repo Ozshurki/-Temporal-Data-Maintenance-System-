@@ -27,26 +27,26 @@ def update_record():
     return [update, select]
 
 
-def update_latest_record():
+def update_latest_record(valid_date_without_time):
     update = " UPDATE PATIENTS" \
              " SET last_modified = %s" \
              " WHERE first_name = %s" \
              " AND loinc_num = %s" \
-             " AND valid_start_time::DATE = %s " \
+             " AND valid_start_time{date_symbol} = %s " \
              " AND transaction_time IN (SELECT MAX(transaction_time)" \
              " FROM PATIENTS " \
              " WHERE first_name = %s " \
-             " AND valid_start_time::DATE = %s)"
+             " AND valid_start_time{date_symbol} = %s)".format(date_symbol="::DATE" if valid_date_without_time else "")
 
     select = " SELECT * " \
              " FROM PATIENTS" \
              " WHERE first_name = %s" \
              " AND loinc_num = %s" \
-             " AND valid_start_time::DATE = %s " \
+             " AND valid_start_time{date_symbol} = %s " \
              " AND transaction_time IN (SELECT MAX(transaction_time)" \
              " FROM PATIENTS " \
              " WHERE first_name = %s " \
-             " AND valid_start_time::DATE = %s)"
+             " AND valid_start_time{date_symbol} = %s)".format(date_symbol="::DATE" if valid_date_without_time else "")
 
     return [update, select]
 
@@ -55,8 +55,8 @@ def update_query(patients_cursor, inc_cursor, last_modified_cursor):
 
     try:
         [first_name, last_name] = input("Enter patient full name\n").strip().split()
-        valid_date = input("Enter valid date you wish to delete (year/mm/dd  hh/mm/ss)\n").strip().split()
-        modified_date = input("Enter your date (year/mm/dd  hh/mm/ss)\n").strip()
+        valid_date = input("Enter valid date (year/mm/dd  hh/mm/ss)\n").strip().split()
+        modified_date = input("Enter modified date (year/mm/dd  hh/mm/ss)\n").strip()
         loinc_num = input("Enter loinc number\n").strip()
         new_value = input("Enter a new value\n").strip()
 
@@ -71,31 +71,35 @@ def update_query(patients_cursor, inc_cursor, last_modified_cursor):
         if not modified_date:
             modified_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        if not date_exists(valid_date, patients_cursor):
-            raise NameError(f"No such date {valid_date} in the database, please try again.")
-
+        valid_date_without_time = False
         if len(valid_date) == 1:
-            [update_query, select_query] = update_latest_record()
-            valid_date = valid_date[0]
-            patients_cursor.execute(update_query,
-                                    (modified_date, first_name, loinc_num, valid_date, first_name, valid_date,))
-            patients_cursor.execute(select_query,
-                                    (modified_date, first_name, loinc_num, valid_date, first_name, valid_date,))
+            valid_date_without_time = True
+            date = valid_date[0]
         else:
-            [update_query, select_query] = update_record()
-            valid_date = valid_date[0] + " " + valid_date[1]
-            patients_cursor.execute(update_query, (modified_date, first_name, loinc_num, valid_date,))
-            patients_cursor.execute(select_query, (modified_date, first_name, loinc_num, valid_date,))
+            date = valid_date[0] + " " + valid_date[1]
 
-        records = patients_cursor.fetchall()
-        print("The records that has been updates are:\n")
-        for record in records:
-            print(f"{first_name} {last_name} loinc_num: {record['loinc_num']} ({long_common_name}) at {valid_date}")
+        if not date_exists(date, patients_cursor, valid_date_without_time):
+            raise NameError(f"No such date {date} in the database, please try again.")
+
+        #if valid_date_without_time:
+        [update_query, select_query] = update_latest_record(valid_date_without_time)
+        patients_cursor.execute(update_query, (modified_date, first_name, loinc_num, date, first_name, date,))
+        patients_cursor.execute(select_query, (first_name, loinc_num, date, first_name, date,))
+        # else:
+        #     [update_query, select_query] = update_record()
+        #     patients_cursor.execute(update_query, (modified_date, first_name, loinc_num, date,))
+        #     patients_cursor.execute(select_query, (first_name, loinc_num, date,))
+
+
+        record = patients_cursor.fetchone()
+        print("The record that has been update is:\n")
+        # for record in records:
+        print(f"{first_name} {last_name} loinc_num: {record['loinc_num']} ({long_common_name}) at {date}")
 
         print("Record has been update")
         # Insert new record to modified database
         query = insert_new_record()
-        insert_values = (first_name, last_name, loinc_num, valid_date, new_value, modified_date)
+        insert_values = (first_name, last_name, loinc_num, record['valid_start_time'], new_value, modified_date)
         last_modified_cursor.execute(query, insert_values)
 
     except Exception as error:

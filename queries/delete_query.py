@@ -29,28 +29,25 @@ def find_record():
     return query
 
 
-def delete_record(cursor, cursor_inc):
+def delete_record(patients_cursor, inc_cursor, last_modified_cursor):
 
     try:
         [first_name, last_name] = input("Enter patient full name\n").strip().split()
         valid_date = input("Enter valid date you wish to delete (year/mm/dd  hh/mm/ss)\n").strip().split()
         delete_date = input("Enter your date (year/mm/dd  hh/mm/ss)\n").strip().split()
-        examination_num = input("Enter loinc\n").strip()
+        loinc_num = input("Enter loinc number\n").strip()
 
         # Verify if first_name exists
-        if not first_name_is_valid(first_name, cursor):
+        if not first_name_is_valid(first_name, patients_cursor):
             raise NameError(f"No such name {first_name} {last_name}, please try again.")
 
         # Get Long Common Name
-        lcn_query = get_inc()
-        cursor_inc.execute(lcn_query, (examination_num,))
-        long_common_name = cursor_inc.fetchone()['lcn'].lower()
+        long_common_name = get_inc(inc_cursor, loinc_num)
+        # inc_cursor.execute(lcn_query, (loinc_num))
+        # long_common_name = inc_cursor.fetchone()['lcn'].lower()
 
         if not delete_date:
             delete_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        if not date_exists(valid_date, cursor):
-            raise NameError(f"No such date {valid_date} in the database, please try again.")
 
         without_time = False
         date = ""
@@ -60,12 +57,15 @@ def delete_record(cursor, cursor_inc):
         else:
             date = valid_date[0] + " " + valid_date[1]
 
+        if not date_exists(date, patients_cursor, without_time):
+            raise NameError(f"No such date {valid_date} in the database, please try again.")
+
         if without_time:
             query = find_latest_record()
-            cursor.execute(query, (delete_date, first_name, examination_num, first_name, examination_num, date))
+            patients_cursor.execute(query, (delete_date, first_name, loinc_num, first_name, loinc_num, date))
         else:
             query = find_record()
-            cursor.execute(query, (delete_date, first_name, examination_num, date))
+            patients_cursor.execute(query, (delete_date, first_name, loinc_num, date))
 
         # Get the value of the examination
         print(f"{first_name} {last_name} {long_common_name} at {date} is deleted\n")
