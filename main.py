@@ -16,8 +16,8 @@ def input_invalid():
 
 def add_columns(cursor):
     add_column = 'ALTER TABLE PATIENTS' \
-                 'ADD COLUMN deleted_time timestamp without time zone' \
-                 'ADD COLUMN last_modified timestamp without time zone'
+                 'ADD COLUMN last_modified timestamp without time zone ' \
+                 "ADD COLUMN deleted_time timestamp without time zone NOT NULL DEFAULT '3000-12-12 00:00:00' "
 
     cursor.execute(add_column)
 
@@ -92,7 +92,7 @@ def main():
                                 port=port_id) as last_modified_conn:
                             with last_modified_conn.cursor(cursor_factory=psycopg2.extras.DictCursor)\
                                     as last_modified_cursor:
-                                # add_columns(cursor)
+                                add_columns(patients_cursor)
 
                                 user_input = select_action(chooseAction)
                                 while user_input is not EXIT:
