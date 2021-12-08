@@ -8,8 +8,6 @@ from queries.delete_query import delete_record
 from queries.update_query import update_query
 from queries.retrieving_history import history_query
 
-EXIT = 5
-
 
 def input_invalid():
     print("Input is invalid, please try again.")
@@ -32,7 +30,6 @@ chooseAction = "Please choose your action:\n" \
                "2. Retrieving history\n" \
                "3. Update\n" \
                "4. Delete\n" \
-               "5. Exit\n" \
 
 # Patients DB
 hostname = 'localhost'
@@ -99,10 +96,9 @@ def main():
                                 add_columns(patients_cursor)
 
                                 user_input = select_action(chooseAction)
-                                while user_input is not EXIT:
-                                    input_dict.get(user_input, input_invalid)(
-                                        patients_cursor, inc_cursor, last_modified_cursor)
-                                    user_input = select_action(chooseAction)
+                                input_dict.get(user_input, input_invalid)(
+                                         patients_cursor, inc_cursor, last_modified_cursor)
+
     except Exception as error:
         print(error)
     finally:
